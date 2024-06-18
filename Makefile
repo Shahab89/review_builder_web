@@ -1,5 +1,10 @@
+
+install_requirements:
+	@pip install -r requirements.txt
+
+
 streamlit:
-	-@streamlit run review_assistant_web/app.py
+	-@streamlit run app.py
 
 
 gar_creation:
