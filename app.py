@@ -52,6 +52,8 @@ if 'criteria' not in st.session_state:
     st.session_state.criteria = []
 if 'rated_criteria' not in st.session_state:
     st.session_state.rated_criteria = {}
+if 'language' not in st.session_state:
+    st.session_state.language = ''
 if 'reviews' not in st.session_state:
     st.session_state.reviews = []
 
@@ -69,9 +71,25 @@ def fetch_criteria(product):
         st.error(ERROR_MESSAGE_TEMPLATE.format(requested='criteria', error=e))
         return []
 
+
+# Function to fetch language from API or use dummy data
+@st.cache_data(ttl=3600)
+def fetch_language(language):
+    if not API_URL:
+        return 'English'
+    try:
+        selected_language = requests.get(API_URL + 'language', params = language)
+        return selected_language
+    except requests.RequestException as e:
+        st.error(ERROR_MESSAGE_TEMPLATE.format(requested='language', error=e))
+        return ''
+
+
+
+
 # Function to fetch reviews from API or use dummy data
 @st.cache_data(ttl=3600)
-def fetch_reviews(product, rated_criteria):
+def fetch_reviews(product, rated_criteria, language):
     if not API_URL:
         return [
             """
@@ -87,9 +105,11 @@ def fetch_reviews(product, rated_criteria):
             """
         ]
     try:
-        res = requests.post(API_URL + 'reviews', params=dict(product=product, rated_criteria=json.dumps(rated_criteria)))
+        res = requests.post(API_URL + 'reviews', params=dict(product=product, rated_criteria=json.dumps(rated_criteria), language = language))
         res.raise_for_status()
+        print(res.json())
         return res.json()
+
     except requests.RequestException as e:
         st.error(ERROR_MESSAGE_TEMPLATE.format(requested='reviews', error=e))
         return []
@@ -108,10 +128,21 @@ with col1:
         st.header("Product Name")
         product = st.text_input(label="Enter the product you want to review", value=st.session_state.product, max_chars=100)
         st.session_state.product = product
-        if st.form_submit_button("Next"):
+        # if st.form_submit_button("Next"):
+            # st.session_state.criteria = fetch_criteria(product)
+            # st.session_state.rated_criteria = {}
+            # st.session_state.reviews = []
+
+        st.header("Sellect Language")
+        language =  st.selectbox('Select a line to filter', ['English', 'German'])
+        st.session_state.language = language
+        if st.form_submit_button("Select"):
+            st.session_state.language = fetch_language(language)
             st.session_state.criteria = fetch_criteria(product)
             st.session_state.rated_criteria = {}
             st.session_state.reviews = []
+
+
 
     if st.session_state.criteria:
         with st.form('criteria_form'):
@@ -120,12 +151,17 @@ with col1:
                 st.write(f"### {criterion.capitalize()}")
                 st.session_state.rated_criteria[criterion] = st.slider("", 1, 5, 3, key=criterion)
             if st.form_submit_button("Generate Reviews"):
-                st.session_state.reviews = fetch_reviews(st.session_state.product, st.session_state.rated_criteria)
+                st.session_state.reviews = fetch_reviews(st.session_state.product, st.session_state.rated_criteria, st.session_state.language)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # Right side: Display reviews
 with col2:
-    st.markdown("<div class='right-side'>", unsafe_allow_html=True)
+    # st.markdown("<div class='right-side'>", unsafe_allow_html=True)
+    # if st.session_state.language:
+    #     st.header("Select your review's language")
+    #     selected_language = st.selectbox('Select language', ['English', 'German', 'Other Language'])
+    #     st.session_state.language = selected_language
+
 
     if st.session_state.reviews:
         st.header("Reviews")
