@@ -8,7 +8,9 @@ This project serves as the frontend for the Intelligent Review Builder with AI.
 
 1. **User Input - Product Name**:
    - The user begins by providing a title or description of the product they wish to review.
-
+   - 
+1. **User Input - Select Language**:
+   - The user begins by selecting language for the review(s).
 2. **Generate Rating Criteria**:
    - Based on the provided product description, the application generates a list of criteria for rating.
 
